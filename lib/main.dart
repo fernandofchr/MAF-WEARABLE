@@ -1,71 +1,67 @@
-import 'package:flutter/material.dart';
-import 'package:syncfusion_flutter_gauges/gauges.dart';
-import 'mqtt_service.dart';
+import 'package:flutter/material.dart'; // Importa los componentes esenciales de Flutter.
+import 'package:syncfusion_flutter_gauges/gauges.dart'; // Importa la biblioteca de Syncfusion para crear gauges.
+import 'mqtt_service.dart'; // Importa el servicio MQTT personalizado para manejar la conexión y la transmisión de datos.
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MyApp()); // La función principal que ejecuta la aplicación.
 }
 
-/// [MyApp] es la clase principal de la aplicación Flutter. 
-/// Inicia la aplicación con un tema oscuro y establece [GaugeScreen] como la pantalla principal.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Gauge MQTT App',
+      title: 'Gauge MQTT App', // Establece el título de la aplicación.
       theme: ThemeData(
-        brightness: Brightness.dark, // Configura el tema oscuro de la aplicación
-        scaffoldBackgroundColor: Colors.black, // Establece un fondo negro para todas las pantallas
+        brightness: Brightness.dark, // Define el tema oscuro para la aplicación.
+        scaffoldBackgroundColor: Colors.black, // Establece el fondo de la aplicación en negro.
       ),
-      debugShowCheckedModeBanner: false, // Oculta el banner de "debug" en la aplicación
-      home: const GaugeScreen(), // Define la pantalla principal de la aplicación
+      debugShowCheckedModeBanner: false, // Oculta el banner de depuración.
+      home: const GaugeScreen(), // Define la pantalla principal de la aplicación.
     );
   }
 }
 
-/// [GaugeScreen] es un widget con estado que muestra un conjunto de gauges en diferentes pestañas.
-/// Los valores de los gauges se actualizan en tiempo real desde un servidor MQTT.
 class GaugeScreen extends StatefulWidget {
   const GaugeScreen({super.key});
 
   @override
-  _GaugeScreenState createState() => _GaugeScreenState();
+  _GaugeScreenState createState() => _GaugeScreenState(); // Crea el estado asociado a la pantalla principal.
 }
 
 class _GaugeScreenState extends State<GaugeScreen> {
-  late MqttService _mqttService; // Servicio MQTT para conectar y recibir datos
-  double _temperature = 12.4; // Valor inicial para la temperatura (RPM)
-  double _humidity = 5.0; // Valor inicial para la humedad (LDR)
-  double _pressure = 5.0; // Valor inicial para la presión (UV)
+  late MqttService _mqttService; // Declaración del servicio MQTT.
+  double _temperature = 12.4; // Valor inicial para la temperatura.
+  double _humidity = 5.0; // Valor inicial para la humedad.
+  double _pressure = 5.0; // Valor inicial para la presión.
 
   @override
   void initState() {
     super.initState();
-    connectMqtt(); // Conectar al servidor MQTT cuando el widget se inicia
+    connectMqtt(); // Conecta el servicio MQTT cuando se inicializa el estado.
   }
 
-  /// Método para conectar al servidor MQTT y suscribirse a los tópicos de interés.
+  // Método para conectar el servicio MQTT y suscribirse a los tópicos.
   void connectMqtt() async {
-    _mqttService = MqttService('broker.hivemq.com', 'texto123o'); // Inicializa el servicio MQTT
-    await _mqttService.connect(); // Conecta al broker MQTT
+    _mqttService = MqttService('broker.hivemq.com', 'texto123o'); // Conecta al broker MQTT.
+    await _mqttService.connect(); // Espera a que la conexión se establezca.
 
-    // Escucha el tópico 'topico/rpm' y actualiza el valor de _temperature.
-    _mqttService.getValueStream('topico/rpm').listen((temperature) {
+    // Escucha los mensajes del tópico 'topico/rpmMejorado' y actualiza la temperatura.
+    _mqttService.getValueStream('topico/rpmMejorado').listen((temperature) {
       setState(() {
         _temperature = temperature;
       });
     });
 
-    // Escucha el tópico 'topico/ldr_value' y actualiza el valor de _humidity.
+    // Escucha los mensajes del tópico 'topico/ldr_value' y actualiza la humedad.
     _mqttService.getValueStream('topico/ldr_value').listen((humidity) {
       setState(() {
         _humidity = humidity;
       });
     });
 
-    // Escucha el tópico 'topico/uv' y actualiza el valor de _pressure.
+    // Escucha los mensajes del tópico 'topico/uv' y actualiza la presión.
     _mqttService.getValueStream('topico/uv').listen((pressure) {
       setState(() {
         _pressure = pressure;
@@ -76,37 +72,38 @@ class _GaugeScreenState extends State<GaugeScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3, // Número de pestañas en el TabBar
+      length: 3, // Define el número de pestañas.
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('MAF - WATCH'), // Título en la barra superior
-          centerTitle: true, // Centrar el título en la barra superior
+          title: const Text('MAF - WATCH'), // Título de la barra de la aplicación.
+          centerTitle: true, // Centra el título.
           bottom: const TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.favorite), text: "RPM"), // Pestaña para RPM
-              Tab(icon: Icon(Icons.wb_sunny), text: "UV"), // Pestaña para UV
-              Tab(icon: Icon(Icons.lightbulb), text: "LDR"), // Pestaña para LDR
+              Tab(icon: Icon(Icons.favorite), text: "RPM"), // Pestaña para el gauge de RPM.
+              Tab(icon: Icon(Icons.wb_sunny), text: "UV"), // Pestaña para el gauge de UV.
+              Tab(icon: Icon(Icons.lightbulb), text: "LDR"), // Pestaña para el gauge de LDR.
             ],
           ),
         ),
         body: TabBarView(
           children: [
             GaugeTab(
-              title: 'BPM',
-              min: 0,
-              max: 200,
-              value: _temperature, // Valor actual de la temperatura (RPM)
+              title: 'RPM', // Título del gauge de RPM.
+              min: 0, // Valor mínimo del gauge.
+              max: 200, // Valor máximo del gauge.
+              value: _temperature, // Valor actual del gauge.
               ranges: [
-                GaugeRange(startValue: 0, endValue: 50, color: Colors.blue),
-                GaugeRange(startValue: 50, endValue: 150, color: Colors.green),
-                GaugeRange(startValue: 150, endValue: 200, color: Colors.red),
+                GaugeRange(startValue: 0, endValue: 50, color: Colors.blue), // Rango de color azul.
+                GaugeRange(startValue: 50, endValue: 150, color: Colors.green), // Rango de color verde.
+                GaugeRange(startValue: 150, endValue: 200, color: Colors.red), // Rango de color rojo.
               ],
+              footer: "Promedio de RPM", // Texto que aparece debajo del gauge.
             ),
             GaugeTab(
-              title: 'UV',
+              title: 'UV', // Título del gauge de UV.
               min: 0,
               max: 100,
-              value: _pressure, // Valor actual de la presión (UV)
+              value: _pressure,
               ranges: [
                 GaugeRange(startValue: 0, endValue: 30, color: Colors.blue),
                 GaugeRange(startValue: 30, endValue: 60, color: Colors.green),
@@ -114,10 +111,10 @@ class _GaugeScreenState extends State<GaugeScreen> {
               ],
             ),
             GaugeTab(
-              title: 'LDR',
+              title: 'LDR', // Título del gauge de LDR.
               min: 0,
               max: 100,
-              value: _humidity, // Valor actual de la humedad (LDR)
+              value: _humidity,
               ranges: [
                 GaugeRange(startValue: 0, endValue: 30, color: Colors.blue),
                 GaugeRange(startValue: 30, endValue: 60, color: Colors.green),
@@ -131,21 +128,21 @@ class _GaugeScreenState extends State<GaugeScreen> {
   }
 }
 
-/// [GaugeTab] es un widget que representa un gauge individual en la pantalla.
-/// Muestra un gauge radial con un valor y un título, utilizando los datos pasados a través de los parámetros.
 class GaugeTab extends StatelessWidget {
-  final String title; // Título del gauge (por ejemplo, "RPM", "UV", "LDR")
-  final double min; // Valor mínimo del gauge
-  final double max; // Valor máximo del gauge
-  final double value; // Valor actual que se muestra en el gauge
-  final List<GaugeRange> ranges; // Rango de colores para las distintas zonas del gauge
+  final String title; // Título del gauge.
+  final double min; // Valor mínimo del gauge.
+  final double max; // Valor máximo del gauge.
+  final double value; // Valor actual del gauge.
+  final List<GaugeRange> ranges; // Rango de colores del gauge.
+  final String? footer; // Texto opcional para mostrar debajo del gauge.
 
   const GaugeTab({
     required this.title,
     required this.min,
     required this.max,
-    required this.value, 
+    required this.value,
     required this.ranges,
+    this.footer, // Constructor con el parámetro footer.
   });
 
   @override
@@ -156,35 +153,47 @@ class GaugeTab extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white), // Estilo del texto
+            style: const TextStyle(
+                fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           SizedBox(
             height: 200,
             child: SfRadialGauge(
-              backgroundColor: Colors.black, // Fondo negro para el gauge
+              backgroundColor: Colors.black, // Color de fondo del gauge.
               axes: <RadialAxis>[
                 RadialAxis(
                   minimum: min,
                   maximum: max,
                   ranges: ranges,
                   pointers: <GaugePointer>[
-                    NeedlePointer(value: value), // Muestra el valor actual con una aguja
+                    NeedlePointer(value: value), // Indicador de aguja.
                   ],
                   annotations: <GaugeAnnotation>[
                     GaugeAnnotation(
                       widget: Text(
-                        '$value', // Muestra el valor numérico dentro del gauge
+                        '$value', // Valor que se muestra en el gauge.
                         style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
                       ),
                       angle: 90,
-                      positionFactor: 0.5, // Posición del valor dentro del gauge
+                      positionFactor: 0.5,
                     ),
                   ],
                 ),
               ],
             ),
           ),
+          if (footer != null) // Si el footer no es nulo, se muestra el texto debajo del gauge.
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                footer!,
+                style: const TextStyle(
+                    fontSize: 16, color: Colors.white),
+              ),
+            ),
         ],
       ),
     );
